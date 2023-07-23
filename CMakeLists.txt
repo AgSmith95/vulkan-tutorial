@@ -9,6 +9,10 @@ find_package(Threads REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	add_definitions(-DDEBUG="1")
+endif()
+
 set(SOURCE_FILES main.cpp)
 set(EXECUTABLE vulkan-tutorial)
 add_executable(${EXECUTABLE} ${SOURCE_FILES})
