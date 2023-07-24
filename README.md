@@ -1,4 +1,4 @@
 Me trying to learn Vulkan API
 
 Resources:
-1. https://vulkan-tutorial.com/en/
+1. https://vulkan-tutorial.com/Introduction
