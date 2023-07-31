@@ -18,7 +18,7 @@ set(EXECUTABLE vulkan-tutorial)
 add_executable(${EXECUTABLE} ${SOURCE_FILES})
 
 set_target_properties(${EXECUTABLE} PROPERTIES
-	CXX_STANDARD 17
+	CXX_STANDARD 20
 	CXX_STANDARD_REQUIRED ON
 )
 
