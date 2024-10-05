@@ -225,6 +225,9 @@ private:
 		return VK_TRUE;
 	}
 
+
+
+private:
 	GLFWwindow *window;
 	VkInstance instance;
 

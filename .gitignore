@@ -1,5 +1,10 @@
 # ignore build directory
 build/
+# ignore Make output
+VulkanTest
 
 # ignore IDE stuff
 .vscode/
+
+# ignore tmp
+tmp/
