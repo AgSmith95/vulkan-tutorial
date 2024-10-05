@@ -54,12 +54,16 @@ private:
 		auto destroyDebugUtilsMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 		if (destroyDebugUtilsMessenger != nullptr) {
 			destroyDebugUtilsMessenger(instance, debugMessenger, nullptr);
+			dlog("cleanup: vkDestroyDebugUtilsMessengerEXT");
 		}
 		#endif // DEBUG
+
 		vkDestroyInstance(instance, nullptr);
 		dlog("cleanup: vkDestroyInstance");
+
 		glfwDestroyWindow(window);
 		dlog("cleanup: glfwDestroyWindow");
+
 		glfwTerminate();
 		dlog("cleanup: glfwTerminate");
 	}
@@ -220,7 +224,7 @@ private:
 		void* /*pUserData*/
 	) {
 		if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-			cerr << "VL[" << messageSeverity << "]: " << pCallbackData->pMessage << ":\n";
+			cerr << "VL_E[" << messageSeverity << "]: " << pCallbackData->pMessage << ":\n";
 			for (uint32_t i = 0; i < pCallbackData->objectCount; ++i) {
 				cerr << '\t' << pCallbackData->pObjects[i].pObjectName << '\n';
 			}
