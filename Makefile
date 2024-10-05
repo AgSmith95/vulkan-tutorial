@@ -1,8 +1,14 @@
 CFLAGS = -std=c++17 -O2
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
+all: VulkanTest
+
+debug: CFLAGS += -DDEBUG
+debug: LDFLAGS += -Wl,--trace
+debug: VulkanTest
+
 VulkanTest: main.cpp
-	g++ -Wl,--trace $(CFLAGS) -o VulkanTest main.cpp $(LDFLAGS)
+	g++ $(CFLAGS) -o VulkanTest main.cpp $(LDFLAGS)
 
 .PHONY: test clean
 

@@ -7,6 +7,8 @@
 #include <vector>
 #include <cstring>
 
+#include "debug.h"
+
 using std::cout;
 using std::runtime_error;
 using std::vector;
@@ -18,11 +20,6 @@ static constexpr uint32_t HEIGHT = 600;
 const vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
-#ifdef DEBUG
-static constexpr bool enableValidationLayers = true;
-#else
-static constexpr bool enableValidationLayers = false;
-#endif // DEBUG
 
 class HelloTriangleApplication {
 public:
@@ -60,14 +57,19 @@ private:
 		}
 		#endif // DEBUG
 		vkDestroyInstance(instance, nullptr);
+		dlog("cleanup: vkDestroyInstance");
 		glfwDestroyWindow(window);
+		dlog("cleanup: glfwDestroyWindow");
 		glfwTerminate();
+		dlog("cleanup: glfwTerminate");
 	}
 
 	void createInstance() {
-		if (enableValidationLayers && !checkValidationLayersSupport()) {
+		#ifdef DEBUG
+		if (!checkValidationLayersSupport()) {
 			throw runtime_error("!createInstance: !checkValidationLayersSupport");
 		}
+		#endif // DEBUG
 
 		VkApplicationInfo appInfo{};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -107,6 +109,7 @@ private:
 		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
 			throw runtime_error("!createInstance: vkCreateInstance != VK_SUCCESS");
 		}
+		dlog("SUCCESS! createInstance");
 
 		#ifdef DEBUG // Create Validation Levels
 		auto createDebugUtilsMessenger = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -119,6 +122,7 @@ private:
 		#endif // DEBUG
 	}
 
+	#ifdef DEBUG
 	bool checkValidationLayersSupport() const {
 		uint32_t layerCount = 0;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -142,16 +146,18 @@ private:
 
 		return true;
 	}
+	#endif // DEBUG
 
 	vector<const char*> getRequiredExtensions() const {
 		uint32_t glfwRequiredExtensionsCount = 0;
 		const char** glfwExtensionsNames = glfwGetRequiredInstanceExtensions(&glfwRequiredExtensionsCount);
 		vector<const char*> requiredExtensions(glfwExtensionsNames, glfwExtensionsNames + glfwRequiredExtensionsCount);
 
-		if (enableValidationLayers) {
-			++glfwRequiredExtensionsCount;
-			requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		}
+		#ifdef DEBUG
+		++glfwRequiredExtensionsCount;
+		requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		#endif // DEBUG
+
 		return requiredExtensions;
 	}
 
