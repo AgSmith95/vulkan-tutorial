@@ -41,6 +41,7 @@ private:
 
 	void initVulkan() {
 		createInstance();
+		pickPhysicalDevice();
 	}
 
 	void mainLoop() {
@@ -115,7 +116,7 @@ private:
 		}
 		dlog("SUCCESS! createInstance");
 
-		#ifdef DEBUG // Create Validation Levels
+		#ifdef DEBUG
 		auto createDebugUtilsMessenger = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 		if (createDebugUtilsMessenger == nullptr) {
 			throw runtime_error("!createInstance createDebugUtilsMessenger == nullptr");
@@ -124,6 +125,40 @@ private:
 			throw runtime_error("!createInstance createDebugUtilsMessenger != VK_SUCCESS");
 		}
 		#endif // DEBUG
+	}
+
+	void pickPhysicalDevice() {
+		// https://vulkan-tutorial.com/en/Drawing_a_triangle/Setup/Physical_devices_and_queue_families
+		uint32_t deviceCount = 0;
+		vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+		if (deviceCount == 0) {
+			throw runtime_error("!pickPhysicalDevice vkEnumeratePhysicalDevices deviceCount=0");
+		}
+		dlog("pickPhysicalDevice vkEnumeratePhysicalDevices found N=", deviceCount, " devices");
+
+		std::vector<VkPhysicalDevice> devices(deviceCount);
+		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+		for (const VkPhysicalDevice& device : devices) {
+			if (isDeviceSuitable(device)) {
+				physicalDevice = device;
+				dlog("pickPhysicalDevice picked device[", device,"]");
+				break;
+			}
+		}
+		if(physicalDevice == VK_NULL_HANDLE) {
+			throw runtime_error("!pickPhysicalDevice vkEnumeratePhysicalDevices no suitable");
+		}
+	}
+
+	bool isDeviceSuitable(VkPhysicalDevice device) {
+		VkPhysicalDeviceProperties deviceProperties;
+		VkPhysicalDeviceFeatures deviceFeatures;
+		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+		dlog("isDeviceSuitable[", device,"] deviceName='", deviceProperties.deviceName, '\'');
+
+		return	deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+				deviceFeatures.geometryShader;
 	}
 
 	#ifdef DEBUG
@@ -240,6 +275,7 @@ private:
 private:
 	GLFWwindow *window;
 	VkInstance instance;
+	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
 	#ifdef DEBUG // Validation Levels
 	VkDebugUtilsMessengerEXT debugMessenger;
