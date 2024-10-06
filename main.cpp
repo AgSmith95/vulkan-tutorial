@@ -5,14 +5,15 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
+#include <map>
 #include <cstring>
 
 #include "debug.h"
 
 using std::cout;
-using std::runtime_error;
-using std::vector;
 using std::cerr;
+using std::vector;
+using std::runtime_error;
 
 static constexpr uint32_t WIDTH = 800;
 static constexpr uint32_t HEIGHT = 600;
@@ -136,29 +137,46 @@ private:
 		}
 		dlog("pickPhysicalDevice vkEnumeratePhysicalDevices found N=", deviceCount, " devices");
 
-		std::vector<VkPhysicalDevice> devices(deviceCount);
+		vector<VkPhysicalDevice> devices(deviceCount);
 		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+		std::multimap<size_t, VkPhysicalDevice> candidates;
 		for (const VkPhysicalDevice& device : devices) {
-			if (isDeviceSuitable(device)) {
-				physicalDevice = device;
-				dlog("pickPhysicalDevice picked device[", device,"]");
-				break;
-			}
+			size_t score = rateDeviceSuitability(device);
+			candidates.insert(std::make_pair(score, device));
+		}
+
+		if (candidates.rbegin()->first > 0) { // check if best candidate is suitable
+			physicalDevice = candidates.rbegin()->second;
 		}
 		if(physicalDevice == VK_NULL_HANDLE) {
 			throw runtime_error("!pickPhysicalDevice vkEnumeratePhysicalDevices no suitable");
 		}
+		dlog("pickPhysicalDevice picked device[", physicalDevice, ']');
 	}
 
-	bool isDeviceSuitable(VkPhysicalDevice device) {
-		VkPhysicalDeviceProperties deviceProperties;
+	size_t rateDeviceSuitability(VkPhysicalDevice device) {
 		VkPhysicalDeviceFeatures deviceFeatures;
-		vkGetPhysicalDeviceProperties(device, &deviceProperties);
 		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-		dlog("isDeviceSuitable[", device,"] deviceName='", deviceProperties.deviceName, '\'');
 
-		return	deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-				deviceFeatures.geometryShader;
+		// App can't run without geometry shader
+		if (!deviceFeatures.geometryShader) {
+			dlog("rateDeviceSuitability !geometryShader");
+			return 0;
+		}
+
+		VkPhysicalDeviceProperties deviceProperties;
+		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+		size_t score = 0;
+		// Discrete GPU gives significant performance advantage
+		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+			score += 10'000;
+		}
+		// Max possible size of textures affects graphics quality
+		score += deviceProperties.limits.maxImageDimension2D;
+
+		dlog("rateDeviceSuitability[", device,"] deviceName='", deviceProperties.deviceName, " score=", score);
+		return score;
 	}
 
 	#ifdef DEBUG
@@ -266,7 +284,7 @@ private:
 			return VK_FALSE;
 		}
 
-		cout << "VL[" << messageSeverity << "]: " << pCallbackData->pMessage << '\n';
+		//cout << "VL[" << messageSeverity << "]: " << pCallbackData->pMessage << '\n';
 		return VK_TRUE;
 	}
 
