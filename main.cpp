@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 #include <cstring>
+#include <optional>
 
 #include "debug.h"
 
@@ -129,7 +130,6 @@ private:
 	}
 
 	void pickPhysicalDevice() {
-		// https://vulkan-tutorial.com/en/Drawing_a_triangle/Setup/Physical_devices_and_queue_families
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 		if (deviceCount == 0) {
@@ -164,6 +164,12 @@ private:
 			return 0;
 		}
 
+		// Graphics queue is required
+		if (!findQueueFamilies(device).isComplete()) {
+			dlog("rateDeviceSuitability !queue with VK_QUEUE_GRAPHICS_BIT");
+			return 0;
+		}
+
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
@@ -177,6 +183,31 @@ private:
 
 		dlog("rateDeviceSuitability[", device,"] deviceName='", deviceProperties.deviceName, " score=", score);
 		return score;
+	}
+
+	struct QueueFamilyIndices {
+		std::optional<uint32_t> graphicsFamily;
+		bool isComplete() const { return graphicsFamily.has_value(); }
+	};
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+		QueueFamilyIndices indices;
+
+		uint32_t queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+		uint32_t graphicsQueueIndex = 0;
+		for (const VkQueueFamilyProperties& queueFamily : queueFamilies) {
+			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+				indices.graphicsFamily = graphicsQueueIndex;
+				break;
+			}
+			graphicsQueueIndex++;
+		}
+		dlog("findQueueFamilies(", device, ") graphicsQueueIndex=", graphicsQueueIndex);
+
+		return indices;
 	}
 
 	#ifdef DEBUG
