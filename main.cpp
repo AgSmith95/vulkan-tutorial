@@ -19,9 +19,11 @@ using std::runtime_error;
 static constexpr uint32_t WIDTH = 800;
 static constexpr uint32_t HEIGHT = 600;
 
+#ifdef DEBUG
 const vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
+#endif // DEBUG
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
