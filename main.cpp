@@ -23,6 +23,12 @@ const vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
 
+struct QueueFamilyIndices {
+	std::optional<uint32_t> graphicsFamily;
+	bool isComplete() const { return graphicsFamily.has_value(); }
+};
+
+
 class HelloTriangleApplication {
 public:
 	void run() {
@@ -185,10 +191,6 @@ private:
 		return score;
 	}
 
-	struct QueueFamilyIndices {
-		std::optional<uint32_t> graphicsFamily;
-		bool isComplete() const { return graphicsFamily.has_value(); }
-	};
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
 		QueueFamilyIndices indices;
 
