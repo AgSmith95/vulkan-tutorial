@@ -1,5 +1,12 @@
 #pragma once
 
+template<typename ...Args>
+void log(Args && ...args)
+{
+	(std::cout << ... << args);
+	std::cout << '\n';
+}
+
 #ifdef DEBUG
 #include <iostream>
 

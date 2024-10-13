@@ -77,6 +77,7 @@ private:
 	void initVulkan() {
 		createInstance();
 		pickPhysicalDevice();
+		createLogicalDevice();
 	}
 
 	void mainLoop() {
@@ -86,6 +87,9 @@ private:
 	}
 
 	void cleanup() {
+		vkDestroyDevice(device, nullptr);
+		dlog("cleanup: vkDestroyDevice");
+
 		#ifdef DEBUG // Destroy Validation Levels
 		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 		dlog("cleanup: vkDestroyDebugUtilsMessengerEXT");
@@ -232,6 +236,46 @@ private:
 		return indices;
 	}
 
+	void createLogicalDevice() {
+		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+		if (!indices.isComplete()) {
+			throw runtime_error("createLogicalDevice !findQueueFamilies");
+		}
+
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		float queuePriority = 1.0f;
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+
+		VkPhysicalDeviceFeatures deviceFeatures{};
+
+		VkDeviceCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+		createInfo.pQueueCreateInfos = &queueCreateInfo;
+		createInfo.queueCreateInfoCount = 1;
+		createInfo.pEnabledFeatures = &deviceFeatures;
+
+		createInfo.enabledExtensionCount = 0;
+		createInfo.enabledLayerCount = 0;
+		#ifdef DEBUG
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+		#endif // DEBUG
+
+		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+			throw runtime_error("createLogicalDevice !vkCreateDevice");
+		}
+		dlog("createLogicalDevice vkCreateDevice SUCCESS");
+
+		vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+		if (graphicsQueue == VK_NULL_HANDLE) {
+			log("createLogicalDevice !vkGetDeviceQueue ERROR");
+		}
+		dlog("createLogicalDevice vkGetDeviceQueue SUCCESS");
+	}
+
 	#ifdef DEBUG
 	bool checkValidationLayersSupport() const {
 		uint32_t layerCount = 0;
@@ -344,9 +388,11 @@ private:
 
 
 private:
-	GLFWwindow *window;
-	VkInstance instance;
-	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+	GLFWwindow       *window = nullptr;
+	VkInstance        instance = VK_NULL_HANDLE;
+	VkPhysicalDevice  physicalDevice = VK_NULL_HANDLE;
+	VkDevice          device = VK_NULL_HANDLE;
+	VkQueue           graphicsQueue = VK_NULL_HANDLE;
 
 	#ifdef DEBUG // Validation Levels
 	VkDebugUtilsMessengerEXT debugMessenger;
