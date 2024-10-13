@@ -23,6 +23,31 @@ static constexpr uint32_t HEIGHT = 600;
 const vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
+
+VkResult CreateDebugUtilsManager(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+	const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger
+) {
+	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+	if (func != nullptr) {
+		dlog("    CreateDebugUtilsManager vkCreateDebugUtilsMessengerEXT found. Calling...");
+		return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+	}
+	else {
+		dlog("    !CreateDebugUtilsManager vkCreateDebugUtilsMessengerEXT NOT FOUND");
+		return VK_ERROR_EXTENSION_NOT_PRESENT;
+	}
+}
+
+void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+	if (func != nullptr) {
+		dlog("    DestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT found. Calling...");
+		func(instance, debugMessenger, pAllocator);
+	}
+	else {
+		dlog("    !DestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT NOT FOUND");
+	}
+}
 #endif // DEBUG
 
 struct QueueFamilyIndices {
@@ -62,11 +87,8 @@ private:
 
 	void cleanup() {
 		#ifdef DEBUG // Destroy Validation Levels
-		auto destroyDebugUtilsMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-		if (destroyDebugUtilsMessenger != nullptr) {
-			destroyDebugUtilsMessenger(instance, debugMessenger, nullptr);
-			dlog("cleanup: vkDestroyDebugUtilsMessengerEXT");
-		}
+		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+		dlog("cleanup: vkDestroyDebugUtilsMessengerEXT");
 		#endif // DEBUG
 
 		vkDestroyInstance(instance, nullptr);
@@ -127,12 +149,8 @@ private:
 		dlog("SUCCESS! createInstance");
 
 		#ifdef DEBUG
-		auto createDebugUtilsMessenger = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-		if (createDebugUtilsMessenger == nullptr) {
-			throw runtime_error("!createInstance createDebugUtilsMessenger == nullptr");
-		}
-		if (createDebugUtilsMessenger(instance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-			throw runtime_error("!createInstance createDebugUtilsMessenger != VK_SUCCESS");
+		if (CreateDebugUtilsManager(instance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+			throw runtime_error("!createInstance CreateDebugUtilsManager != VK_SUCCESS");
 		}
 		#endif // DEBUG
 	}
